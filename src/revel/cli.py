@@ -21,6 +21,7 @@ from revel.plane import (
     neighbors,
     query_node,
 )
+from revel.projection.kanban import COLUMNS, board, move_card
 from revel.store import open_store
 
 
@@ -79,6 +80,13 @@ def main(argv: list[str] | None = None) -> int:
     p_mut.add_argument("--title")
     p_mut.add_argument("--set", dest="sets", action="append", default=[])
 
+    p_board = sub.add_parser("board", help="Kanban projection of nodes")
+    p_board.add_argument("type", nargs="?")
+
+    p_move = sub.add_parser("move", help="move a node to a Kanban column")
+    p_move.add_argument("id")
+    p_move.add_argument("column", choices=COLUMNS)
+
     args = parser.parse_args(sys.argv[1:] if argv is None else argv)
     if args.cmd is None:
         parser.print_help()
@@ -116,6 +124,20 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if args.cmd == "mutate":
             node = mutate_node(store, args.id, title=args.title, payload=_payload(args.sets))
+            _print_node(node)
+            return 0
+        if args.cmd == "board":
+            columns = board(store, args.type)
+            for name in COLUMNS:
+                sys.stdout.write(f"[{name}]\n")
+                nodes = columns[name]
+                if not nodes:
+                    sys.stdout.write("  (empty)\n")
+                for node in nodes:
+                    sys.stdout.write(f"  {node.id}  {node.type}  {node.title}\n")
+            return 0
+        if args.cmd == "move":
+            node = move_card(store, args.id, args.column)
             _print_node(node)
             return 0
     except (KeyError, ValueError) as exc:
