@@ -1,32 +1,79 @@
 #!/usr/bin/env bash
-# Bulk-create Revel GitHub milestones and attach existing issues.
-# GitHub has no bulk-create milestone endpoint. This is one script, many POSTs.
+# Generic GitHub milestone bootstrap. Project data lives in a JSON source file.
+# GitHub has no bulk-create milestone endpoint; this issues one POST per row.
 #
-# Usage (from a clone of landNull/revel, after: gh auth login):
-#   chmod +x scripts/gh-bootstrap-milestones.sh
+# Usage:
 #   ./scripts/gh-bootstrap-milestones.sh
+#   ./scripts/gh-bootstrap-milestones.sh path/to/roadmap.json
+#   SOURCE=planning/roadmap.json REPO=owner/name DRY_RUN=1 ./scripts/gh-bootstrap-milestones.sh
 #
-# Optional:
-#   REPO=landNull/revel ./scripts/gh-bootstrap-milestones.sh
-#   DRY_RUN=1 ./scripts/gh-bootstrap-milestones.sh
+# Source schema (see planning/roadmap.json):
+#   {
+#     "repository": "https://github.com/owner/name" | "owner/name",
+#     "milestones": [
+#       {
+#         "title": "M0",
+#         "due_on": "2026-10-12T23:59:59Z",
+#         "description": "optional",
+#         "state": "open",
+#         "issue_numbers": [1, 2]
+#       }
+#     ]
+#   }
 
 set -euo pipefail
 
-REPO="${REPO:-landNull/revel}"
+SOURCE="${1:-${SOURCE:-planning/roadmap.json}}"
 DRY_RUN="${DRY_RUN:-0}"
 
-JQ_MILESTONE_SUMMARY='.number,.title,.html_url'
+if ! command -v jq >/dev/null 2>&1; then
+  echo "error: jq is required" >&2
+  exit 1
+fi
+if ! command -v gh >/dev/null 2>&1; then
+  echo "error: gh is required" >&2
+  exit 1
+fi
+if [[ ! -f "$SOURCE" ]]; then
+  echo "error: source file not found: $SOURCE" >&2
+  exit 1
+fi
 
-api() {
-  if [[ "$DRY_RUN" == "1" ]]; then
-    printf 'DRY_RUN: gh api %s\n' "$*"
-    return 0
+repo_from_source() {
+  local raw
+  raw="$(jq -r '.repository // .repo // empty' "$SOURCE")"
+  if [[ -z "$raw" ]]; then
+    return 1
   fi
-  gh api "$@"
+  raw="${raw#https://github.com/}"
+  raw="${raw#http://github.com/}"
+  raw="${raw%.git}"
+  raw="${raw%/}"
+  printf '%s\n' "$raw"
 }
 
+if [[ -n "${REPO:-}" ]]; then
+  :
+elif REPO="$(repo_from_source)"; then
+  :
+elif REPO="$(gh repo view --json nameWithOwner --jq .nameWithOwner 2>/dev/null)"; then
+  :
+else
+  echo "error: set REPO=owner/name or put repository in $SOURCE" >&2
+  exit 1
+fi
+
+jq empty "$SOURCE"
+if ! jq -e '.milestones | type=="array"' "$SOURCE" >/dev/null; then
+  echo "error: $SOURCE must contain a milestones array" >&2
+  exit 1
+fi
+
+printf 'source: %s\n' "$SOURCE"
+printf 'repo:   %s\n' "$REPO"
+
 create_milestone() {
-  local title="$1" due="$2" description="$3"
+  local title="$1" due="$2" description="$3" state="$4"
   printf 'milestone: %s\n' "$title"
   if [[ "$DRY_RUN" == "1" ]]; then
     return 0
@@ -40,12 +87,16 @@ create_milestone() {
     printf 'exists: %s (#%s)\n' "$title" "$existing"
     return 0
   fi
+  local -a flags=(-f title="$title" -f state="$state")
+  if [[ -n "$description" ]]; then
+    flags+=(-f description="$description")
+  fi
+  if [[ -n "$due" ]]; then
+    flags+=(-f due_on="$due")
+  fi
   gh api --method POST "repos/${REPO}/milestones" \
-    -f title="$title" \
-    -f state="open" \
-    -f due_on="$due" \
-    -f description="$description" \
-    --jq "${JQ_MILESTONE_SUMMARY}"
+    "${flags[@]}" \
+    --jq '.number,.title,.html_url'
 }
 
 milestone_number() {
@@ -57,6 +108,9 @@ milestone_number() {
 assign_issues() {
   local title="$1"
   shift
+  if [[ "$#" -eq 0 ]]; then
+    return 0
+  fi
   local number
   number="$(milestone_number "$title")"
   if [[ -z "$number" ]]; then
@@ -73,39 +127,38 @@ assign_issues() {
   done
 }
 
-create_milestone "M0 Foundation" "2026-10-12T23:59:59Z" \
-  "Lock N001-N004, Python 3.11 package skeleton, agent contract."
-create_milestone "M1 Graph" "2026-11-02T23:59:59Z" \
-  "All 17 node types plus generic directed links."
-create_milestone "M2 Store" "2026-11-16T23:59:59Z" \
-  "SQLite default adapter. Scale path documented only."
-create_milestone "M3 Control plane" "2026-12-07T23:59:59Z" \
-  "revelctl create/link/query/mutate."
-create_milestone "M4 Kanban projection" "2026-12-21T23:59:59Z" \
-  "Primary projection plus calendar/gantt/list."
-create_milestone "M5 TUI" "2027-01-18T23:59:59Z" \
-  "Textual surface."
-create_milestone "M6 Web" "2027-02-15T23:59:59Z" \
-  "Python web backend; JS widgets are views only."
-create_milestone "M7 Adapters" "2027-03-15T23:59:59Z" \
-  "fs, IMAP/SMTP; OS users/groups optional."
-create_milestone "M8 Package" "2027-03-31T23:59:59Z" \
-  "wheel, pipx, container. No distro policy."
+while IFS=$'\t' read -r title due description state; do
+  create_milestone "$title" "$due" "$description" "$state"
+done < <(
+  jq -r '
+    .milestones[]
+    | [
+        .title,
+        (.due_on // ""),
+        ((.description // "") | gsub("\t"; " ") | gsub("\n"; " ")),
+        (.state // "open")
+      ]
+    | @tsv
+  ' "$SOURCE"
+)
 
 if [[ "$DRY_RUN" == "1" ]]; then
   echo "skip attach in DRY_RUN"
   exit 0
 fi
 
-assign_issues "M0 Foundation" 2 3 4 5 6 7
-assign_issues "M1 Graph" 8 9 10 11 12 13 14
-assign_issues "M2 Store" 15
-assign_issues "M3 Control plane" 16
-assign_issues "M4 Kanban projection" 17 18
-assign_issues "M5 TUI" 19
-assign_issues "M6 Web" 20
-assign_issues "M7 Adapters" 21 22 23
-assign_issues "M8 Package" 24
+while IFS=$'\t' read -r title numbers; do
+  # numbers is space-separated issue ids
+  # shellcheck disable=SC2086
+  assign_issues "$title" $numbers
+done < <(
+  jq -r '
+    .milestones[]
+    | select((.issue_numbers // []) | length > 0)
+    | [.title, ((.issue_numbers | map(tostring) | join(" ")))]
+    | @tsv
+  ' "$SOURCE"
+)
 
 echo "done"
 echo "list: gh api repos/${REPO}/milestones --jq .[].title"

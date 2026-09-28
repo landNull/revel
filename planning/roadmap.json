@@ -1,7 +1,8 @@
 {
   "schema_version": "1.0.0",
   "source": "revel.settings.json",
-  "repository": "https://github.com/landNull/revel",
+  "repository": "landNull/revel",
+  "repository_url": "https://github.com/landNull/revel",
   "parent_issue": 1,
   "milestones": [
     {
