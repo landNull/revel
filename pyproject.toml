@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "revel"
+version = "0.1.0"
+description = "A project manager that treats every element as a task node."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.11"
+authors = [{ name = "landNull" }]
+keywords = ["revel", "revelctl", "graph", "kanban"]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "License :: OSI Approved :: GNU Affero General Public License v3",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
+dependencies = []
+
+[project.scripts]
+revelctl = "revel.cli:main"
+
+[project.urls]
+Repository = "https://github.com/landNull/revel"
+
+[tool.setuptools.packages.find]
+where = ["src"]
