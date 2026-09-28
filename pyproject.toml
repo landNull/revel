@@ -24,6 +24,9 @@ classifiers = [
 ]
 dependencies = []
 
+[project.optional-dependencies]
+store = ["kuzu>=0.11"]
+
 [project.scripts]
 revelctl = "revel.cli:main"
 
