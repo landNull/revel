@@ -1,0 +1,63 @@
+{
+  "schema_version": "1.0.0",
+  "source": "revel.settings.json",
+  "repository": "https://github.com/landNull/revel",
+  "parent_issue": 1,
+  "milestones": [
+    {
+      "title": "M0 Foundation",
+      "due_on": "2026-10-12T23:59:59Z",
+      "description": "Lock N001–N004, Python 3.11 package skeleton, agent contract. Covers thesis, language D001, decisions, agent_instructions.",
+      "issue_numbers": [2, 3, 4, 5, 6, 7]
+    },
+    {
+      "title": "M1 Graph",
+      "due_on": "2026-11-02T23:59:59Z",
+      "description": "All 17 node types plus generic directed links. core.graph.",
+      "issue_numbers": [8, 9, 10, 11, 12, 13, 14]
+    },
+    {
+      "title": "M2 Store",
+      "due_on": "2026-11-16T23:59:59Z",
+      "description": "SQLite default adapter. Scale path documented only. adapters.sql_store.",
+      "issue_numbers": [15]
+    },
+    {
+      "title": "M3 Control plane",
+      "due_on": "2026-12-07T23:59:59Z",
+      "description": "revelctl create/link/query/mutate. core.control_plane.",
+      "issue_numbers": [16]
+    },
+    {
+      "title": "M4 Kanban projection",
+      "due_on": "2026-12-21T23:59:59Z",
+      "description": "Primary projection plus calendar/gantt/list. core.projection.",
+      "issue_numbers": [17, 18]
+    },
+    {
+      "title": "M5 TUI",
+      "due_on": "2027-01-18T23:59:59Z",
+      "description": "Textual surface. surfaces.tui.",
+      "issue_numbers": [19]
+    },
+    {
+      "title": "M6 Web",
+      "due_on": "2027-02-15T23:59:59Z",
+      "description": "Python web backend; JS widgets are views only. surfaces.web.",
+      "issue_numbers": [20]
+    },
+    {
+      "title": "M7 Adapters",
+      "due_on": "2027-03-15T23:59:59Z",
+      "description": "fs, IMAP/SMTP; OS users/groups optional (D004).",
+      "issue_numbers": [21, 22, 23]
+    },
+    {
+      "title": "M8 Package",
+      "due_on": "2027-03-31T23:59:59Z",
+      "description": "wheel, pipx, container. packaging.distro_policy = none.",
+      "issue_numbers": [24]
+    }
+  ],
+  "parked_issues": [25, 26, 27]
+}
