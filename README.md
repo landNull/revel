@@ -2,6 +2,12 @@
 
 Community edition (public, AGPL-3.0). Thesis: a project manager that treats every element as a task node.
 
+## Credits
+
+- Created by: **StarMarketingTeam**
+- Coded with: **Grok** (xAI) — implementation assistance on the community graph, `revelctl` skeleton, and project brief
+- Repository owner: [landNull](https://github.com/landNull)
+
 **Agents and contributors:** `AGENTS.md` → `revel.settings.json` only. Do not fork the brief.
 
 - Core language: Python 3.11+
