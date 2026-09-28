@@ -22,7 +22,9 @@ def create_node(
     payload: dict[str, Any] | None = None,
     id: str | None = None,
 ) -> Node:
-    node = Node.create(type, title, payload=payload, id=id)
+    data = dict(payload or {})
+    data.setdefault("column", "todo")
+    node = Node.create(type, title, payload=data, id=id)
     return store.put_node(node)
 
 
