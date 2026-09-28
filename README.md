@@ -1,6 +1,6 @@
 # Revel
 
-Private project. Thesis: a project manager that treats every element as a task node.
+Community edition (public, AGPL-3.0). Thesis: a project manager that treats every element as a task node.
 
 **Agents and contributors:** `AGENTS.md` → `revel.settings.json` only. Do not fork the brief.
 
