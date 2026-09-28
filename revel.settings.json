@@ -14,8 +14,22 @@
       "url": "https://github.com/landNull/revel",
       "default_branch": "main"
     },
-    "license": null,
-    "status": "bootstrap"
+    "license": "AGPL-3.0-only",
+    "licensing": {
+      "community": "AGPL-3.0-only",
+      "hosted_extras": "proprietary",
+      "model": "open_core",
+      "notes": "Community edition is complete and self-hostable. Subscriber-only hosted features live in a separate closed source product, not in this repo. Not legal advice."
+    },
+    "status": "bootstrap",
+    "development": {
+      "host_distro": "Devuan Excalibur",
+      "init_system": "sysvinit",
+      "role": "author workstation and reference environment only",
+      "not_a_requirement": true,
+      "notes": "Build and test on Devuan Excalibur with sysvinit. Packaging stays wheel/pipx/container. Do not encode Devuan, sysvinit, OpenRC, or Artix into core types or adapters.",
+      "author_experience": "beginner with basic API concepts; explain how layers connect before adding code"
+    }
   },
   "thesis": {
     "one_liner": "A project manager that treats every element as a task node.",
@@ -23,32 +37,10 @@
     "outcome": "One graph of work, one Kanban projection, one CLI control plane, portable adapters at the edge."
   },
   "core": {
-    "must_serve": [
-      "graph",
-      "projection",
-      "control_plane"
-    ],
+    "must_serve": ["graph", "projection", "control_plane"],
     "graph": {
       "description": "Heterogeneous work objects are the same kind of thing: a node with typed links.",
-      "node_types": [
-        "task",
-        "project",
-        "milestone",
-        "file",
-        "email",
-        "event",
-        "lead",
-        "opportunity",
-        "account",
-        "contact",
-        "ticket",
-        "campaign",
-        "content",
-        "inventory_item",
-        "knowledge_article",
-        "user",
-        "group"
-      ],
+      "node_types": ["task", "project", "milestone", "file", "email", "event", "lead", "opportunity", "account", "contact", "ticket", "campaign", "content", "inventory_item", "knowledge_article", "user", "group"],
       "link_model": "generic directed links between any node types; assignment onto a task is a link, not a separate silo"
     },
     "projection": {
@@ -58,14 +50,16 @@
     },
     "control_plane": {
       "entry": "revelctl",
-      "role": "Create, link, query, and mutate nodes. TUI and web are views over this plane."
+      "role": "Create, link, query, and mutate nodes. TUI and web are views over this plane.",
+      "bootstrap": "api_first"
     }
   },
   "surfaces": {
     "cli": {"status": "planned", "name": "revelctl"},
     "tui": {"status": "planned", "toolkit": "textual"},
-    "web": {"status": "planned", "backend": "python", "widgets": ["fullcalendar", "jkanban", "frappe-gantt", "chart.js"]},
-    "desktop_efl": {"status": "rejected", "name": "enlite"}
+    "web": {"status": "planned", "backend": "python", "framework": "fastapi", "widgets": ["fullcalendar", "jkanban", "frappe-gantt", "chart.js"]},
+    "desktop_efl": {"status": "rejected", "name": "enlite"},
+    "ml_orange": {"status": "parked", "name": "Orange", "notes": "Workstation ML GUI only. Not a Revel surface, adapter, or runtime. Do not add conda/Orange to revelctl."}
   },
   "language": {
     "core": "python",
@@ -73,7 +67,7 @@
     "rationale": [
       "Dense polymorphic domain model shared by CLI, TUI, and web",
       "Textual is the best fit for a product TUI",
-      "Mature adapters for IMAP/SMTP, filesystem, and SQL",
+      "Mature adapters for IMAP/SMTP, filesystem, and an embedded graph store",
       "JS calendar/kanban libraries stay view dependencies, not a second system of record"
     ],
     "not_chosen": {
@@ -83,44 +77,30 @@
     }
   },
   "decisions": [
-    {
-      "id": "D001",
-      "date": "2026-09-28",
-      "status": "accepted",
-      "title": "Python 3 is the core language",
-      "applies_to": ["domain", "cli", "tui", "services"]
-    },
-    {
-      "id": "D002",
-      "date": "2026-09-28",
-      "status": "accepted",
-      "title": "Drop Enlite and all EFL / python-efl desktop UI work"
-    },
-    {
-      "id": "D003",
-      "date": "2026-09-28",
-      "status": "accepted",
-      "title": "No first-class dependency on Artix or any single Linux distribution"
-    },
-    {
-      "id": "D004",
-      "date": "2026-09-28",
-      "status": "accepted",
-      "title": "OS user/group and home-directory mapping are optional adapters, not product identity"
-    }
+    {"id": "D001", "date": "2026-09-28", "status": "accepted", "title": "Python 3 is the core language", "applies_to": ["domain", "cli", "tui", "services"]},
+    {"id": "D002", "date": "2026-09-28", "status": "accepted", "title": "Drop Enlite and all EFL / python-efl desktop UI work"},
+    {"id": "D003", "date": "2026-09-28", "status": "accepted", "title": "No first-class dependency on Artix or any single Linux distribution"},
+    {"id": "D004", "date": "2026-09-28", "status": "accepted", "title": "OS user/group and home-directory mapping are optional adapters, not product identity"},
+    {"id": "D005", "date": "2026-09-28", "status": "accepted", "title": "Store model is an explicit graph: nodes and directed links as native vertices/edges", "applies_to": ["graph", "adapters"], "notes": "Default engine is embedded/file-backed (Kuzu) so the workstation needs no DB daemon. Neo4j is a documented scale path only. Core types stay Node/Link; the engine stays in adapters.graph_store. SQL tables are not the system of record."},
+    {"id": "D006", "date": "2026-09-28", "status": "accepted", "title": "API-first bootstrap: domain + revelctl before TUI/web", "applies_to": ["control_plane", "cli", "tui", "web"], "notes": "In-process Python API first (create/link/query/mutate). HTTP can wait until M6. TUI and web are clients of that API, not a second model. Author is a beginner with basic API concepts; teach layer connections when implementing."},
+    {"id": "D007", "date": "2026-09-28", "status": "accepted", "title": "Web HTTP adapter is FastAPI over the same in-process API", "applies_to": ["web", "control_plane"], "notes": "FastAPI exposes create/link/query/mutate as HTTP. No Django ORM. Widgets stay views. Django not chosen because D005 is a graph store and D006 is API-first."},
+    {"id": "D008", "date": "2026-09-28", "status": "accepted", "title": "Community edition AGPL-3.0; hosted subscriber features proprietary (open core)", "applies_to": ["packaging"], "notes": "This repo is the complete community product under AGPL-3.0-only. Paid online extras are a separate closed source service. Do not mix proprietary modules into this tree."},
+    {"id": "D009", "date": "2026-09-28", "status": "parked", "title": "Orange and conda are workstation ML tools, not part of the Revel stack"}
   ],
   "out_of_scope": [
     "Enlightenment Foundation Libraries desktop GUI (Enlite)",
     "python-efl and Edje layout compilation",
-    "Distro-specific identity (Artix, OpenRC, systemd as a requirement)",
-    "A second domain model in JavaScript or another backend language"
+    "Distro-specific identity (Artix, Devuan, OpenRC, sysvinit, systemd as a requirement)",
+    "A second domain model in JavaScript or another backend language",
+    "Orange Data Mining, Anaconda/conda as a Revel runtime or surface"
   ],
   "adapters": {
     "rule": "Swap the host; the graph stays. Adapters must not leak into core types.",
     "items": [
       {"id": "fs", "status": "planned", "notes": "Local filesystem; portable paths, not a branded home layout tied to one distro"},
       {"id": "mail_imap_smtp", "status": "planned"},
-      {"id": "sql_store", "status": "planned", "default": "sqlite", "scale_path": ["postgresql", "mariadb"]},
+      {"id": "graph_store", "status": "planned", "default": "kuzu", "kind": "embedded_graph", "scale_path": ["neo4j"], "notes": "File under XDG data (e.g. ~/.local/share/revel/store). Do not require a running server for the default path. MariaDB/SQLite are not the system of record."},
+      {"id": "sql_store", "status": "parked", "notes": "Parked after D005. Not the system of record."},
       {"id": "os_users_groups", "status": "optional"}
     ]
   },
@@ -129,21 +109,21 @@
     "preferred": ["wheel", "pipx", "container"],
     "python_min": "3.11"
   },
-  "next_decisions": [
-    {"id": "N001", "title": "Store model: relational SQLite schema vs explicit graph store"},
-    {"id": "N002", "title": "TUI-first vs API-first bootstrap order"},
-    {"id": "N003", "title": "Web framework: Django vs FastAPI behind the same models"},
-    {"id": "N004", "title": "License"}
-  ],
+  "next_decisions": [],
   "agent_instructions": {
     "read_this_file_first": true,
+    "explain_for_beginner": true,
+    "author_api_level": "basic concepts only; map each new piece to request/response and to the layer below it",
     "if_feature_does_not_serve": ["graph", "projection", "control_plane"],
     "then": "reject_or_park",
     "do_not": [
       "Reintroduce Enlite, EFL, or Edje",
-      "Treat Artix, OpenRC, or any distro as required",
+      "Treat Artix, Devuan, OpenRC, sysvinit, or any distro as required",
       "Split the domain model across languages",
-      "Put business logic only in JS widgets"
+      "Put business logic only in JS widgets",
+      "Add Orange, conda, or Anaconda to revelctl or the install script",
+      "Put Kuzu or Neo4j types into core graph objects",
+      "Reintroduce SQL tables as the system of record"
     ]
   }
 }
