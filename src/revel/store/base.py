@@ -1,0 +1,23 @@
+"""Store contract. Request/response only — no Kuzu types."""
+
+from __future__ import annotations
+
+from typing import Protocol
+
+from revel.graph import Link, Node
+
+
+class GraphStore(Protocol):
+    def put_node(self, node: Node) -> Node: ...
+
+    def get_node(self, node_id: str) -> Node | None: ...
+
+    def put_link(self, link: Link) -> Link: ...
+
+    def get_link(self, link_id: str) -> Link | None: ...
+
+    def links_from(self, node_id: str) -> list[Link]: ...
+
+    def links_to(self, node_id: str) -> list[Link]: ...
+
+    def close(self) -> None: ...
