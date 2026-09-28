@@ -9,7 +9,10 @@ description = "A project manager that treats every element as a task node."
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.11"
-authors = [{ name = "landNull" }]
+authors = [
+  { name = "StarMarketingTeam" },
+  { name = "landNull" },
+]
 keywords = ["revel", "revelctl", "graph", "kanban"]
 classifiers = [
   "Development Status :: 2 - Pre-Alpha",
