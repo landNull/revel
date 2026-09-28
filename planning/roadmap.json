@@ -20,7 +20,7 @@
     {
       "title": "M2 Store",
       "due_on": "2026-11-16T23:59:59Z",
-      "description": "SQLite default adapter. Scale path documented only. adapters.sql_store.",
+      "description": "Embedded graph store default (Kuzu). Neo4j scale path documented only. adapters.graph_store (D005).",
       "issue_numbers": [15]
     },
     {
@@ -60,5 +60,5 @@
       "issue_numbers": [24]
     }
   ],
-  "parked_issues": [25, 26, 27]
+  "parked_issues": [25, 26, 27, 28]
 }
