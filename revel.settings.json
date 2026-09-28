@@ -1,0 +1,149 @@
+{
+  "schema_version": "1.0.0",
+  "schema_purpose": "Canonical, machine-parseable project brief for AI coding agents. Prefer this file over prose docs when they conflict.",
+  "project": {
+    "name": "revel",
+    "cli_name": "revelctl",
+    "display_name": "Revel",
+    "kind": "application",
+    "visibility": "private",
+    "repository": {
+      "host": "github",
+      "owner": "landNull",
+      "name": "revel",
+      "url": "https://github.com/landNull/revel",
+      "default_branch": "main"
+    },
+    "license": null,
+    "status": "bootstrap"
+  },
+  "thesis": {
+    "one_liner": "A project manager that treats every element as a task node.",
+    "problem": "Work tools silo mail, files, CRM records, events, and tickets so they cannot be planned as one graph.",
+    "outcome": "One graph of work, one Kanban projection, one CLI control plane, portable adapters at the edge."
+  },
+  "core": {
+    "must_serve": [
+      "graph",
+      "projection",
+      "control_plane"
+    ],
+    "graph": {
+      "description": "Heterogeneous work objects are the same kind of thing: a node with typed links.",
+      "node_types": [
+        "task",
+        "project",
+        "milestone",
+        "file",
+        "email",
+        "event",
+        "lead",
+        "opportunity",
+        "account",
+        "contact",
+        "ticket",
+        "campaign",
+        "content",
+        "inventory_item",
+        "knowledge_article",
+        "user",
+        "group"
+      ],
+      "link_model": "generic directed links between any node types; assignment onto a task is a link, not a separate silo"
+    },
+    "projection": {
+      "primary": "kanban",
+      "also": ["calendar", "gantt", "list"],
+      "rule": "Kanban is how nodes are seen and moved, not a separate task app."
+    },
+    "control_plane": {
+      "entry": "revelctl",
+      "role": "Create, link, query, and mutate nodes. TUI and web are views over this plane."
+    }
+  },
+  "surfaces": {
+    "cli": {"status": "planned", "name": "revelctl"},
+    "tui": {"status": "planned", "toolkit": "textual"},
+    "web": {"status": "planned", "backend": "python", "widgets": ["fullcalendar", "jkanban", "frappe-gantt", "chart.js"]},
+    "desktop_efl": {"status": "rejected", "name": "enlite"}
+  },
+  "language": {
+    "core": "python",
+    "minimum_version": "3.11",
+    "rationale": [
+      "Dense polymorphic domain model shared by CLI, TUI, and web",
+      "Textual is the best fit for a product TUI",
+      "Mature adapters for IMAP/SMTP, filesystem, and SQL",
+      "JS calendar/kanban libraries stay view dependencies, not a second system of record"
+    ],
+    "not_chosen": {
+      "go": "Strong for a shipped ctl binary; weak for the node graph plus rich TUI plus CRM-shaped domain",
+      "rust": "Right later if the graph becomes a long-lived concurrent engine; too costly before the model exists",
+      "typescript_first": "Right for widgets; wrong as system of record and CLI"
+    }
+  },
+  "decisions": [
+    {
+      "id": "D001",
+      "date": "2026-09-28",
+      "status": "accepted",
+      "title": "Python 3 is the core language",
+      "applies_to": ["domain", "cli", "tui", "services"]
+    },
+    {
+      "id": "D002",
+      "date": "2026-09-28",
+      "status": "accepted",
+      "title": "Drop Enlite and all EFL / python-efl desktop UI work"
+    },
+    {
+      "id": "D003",
+      "date": "2026-09-28",
+      "status": "accepted",
+      "title": "No first-class dependency on Artix or any single Linux distribution"
+    },
+    {
+      "id": "D004",
+      "date": "2026-09-28",
+      "status": "accepted",
+      "title": "OS user/group and home-directory mapping are optional adapters, not product identity"
+    }
+  ],
+  "out_of_scope": [
+    "Enlightenment Foundation Libraries desktop GUI (Enlite)",
+    "python-efl and Edje layout compilation",
+    "Distro-specific identity (Artix, OpenRC, systemd as a requirement)",
+    "A second domain model in JavaScript or another backend language"
+  ],
+  "adapters": {
+    "rule": "Swap the host; the graph stays. Adapters must not leak into core types.",
+    "items": [
+      {"id": "fs", "status": "planned", "notes": "Local filesystem; portable paths, not a branded home layout tied to one distro"},
+      {"id": "mail_imap_smtp", "status": "planned"},
+      {"id": "sql_store", "status": "planned", "default": "sqlite", "scale_path": ["postgresql", "mariadb"]},
+      {"id": "os_users_groups", "status": "optional"}
+    ]
+  },
+  "packaging": {
+    "distro_policy": "none",
+    "preferred": ["wheel", "pipx", "container"],
+    "python_min": "3.11"
+  },
+  "next_decisions": [
+    {"id": "N001", "title": "Store model: relational SQLite schema vs explicit graph store"},
+    {"id": "N002", "title": "TUI-first vs API-first bootstrap order"},
+    {"id": "N003", "title": "Web framework: Django vs FastAPI behind the same models"},
+    {"id": "N004", "title": "License"}
+  ],
+  "agent_instructions": {
+    "read_this_file_first": true,
+    "if_feature_does_not_serve": ["graph", "projection", "control_plane"],
+    "then": "reject_or_park",
+    "do_not": [
+      "Reintroduce Enlite, EFL, or Edje",
+      "Treat Artix, OpenRC, or any distro as required",
+      "Split the domain model across languages",
+      "Put business logic only in JS widgets"
+    ]
+  }
+}
