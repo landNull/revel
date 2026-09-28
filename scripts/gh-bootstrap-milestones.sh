@@ -15,9 +15,11 @@ set -euo pipefail
 REPO="${REPO:-landNull/revel}"
 DRY_RUN="${DRY_RUN:-0}"
 
+JQ_MILESTONE_SUMMARY='.number,.title,.html_url'
+
 api() {
   if [[ "$DRY_RUN" == "1" ]]; then
-    echo "DRY_RUN: gh api $*"
+    printf 'DRY_RUN: gh api %s\n' "$*"
     return 0
   fi
   gh api "$@"
@@ -25,13 +27,25 @@ api() {
 
 create_milestone() {
   local title="$1" due="$2" description="$3"
-  echo "milestone: $title"
-  api --method POST "repos/${REPO}/milestones" \
+  printf 'milestone: %s\n' "$title"
+  if [[ "$DRY_RUN" == "1" ]]; then
+    return 0
+  fi
+  local existing
+  existing="$(
+    gh api "repos/${REPO}/milestones?state=all&per_page=100" \
+      --jq ".[] | select(.title==\"${title}\") | .number" || true
+  )"
+  if [[ -n "${existing}" ]]; then
+    printf 'exists: %s (#%s)\n' "$title" "$existing"
+    return 0
+  fi
+  gh api --method POST "repos/${REPO}/milestones" \
     -f title="$title" \
     -f state="open" \
     -f due_on="$due" \
     -f description="$description" \
-    --jq '{number,title,html_url}'
+    --jq "${JQ_MILESTONE_SUMMARY}"
 }
 
 milestone_number() {
@@ -46,12 +60,12 @@ assign_issues() {
   local number
   number="$(milestone_number "$title")"
   if [[ -z "$number" ]]; then
-    echo "error: milestone not found: $title" >&2
+    printf 'error: milestone not found: %s\n' "$title" >&2
     return 1
   fi
   local issue
   for issue in "$@"; do
-    echo "attach #$issue -> $title (#$number)"
+    printf 'attach #%s -> %s (#%s)\n' "$issue" "$title" "$number"
     if [[ "$DRY_RUN" == "1" ]]; then
       continue
     fi
@@ -59,9 +73,8 @@ assign_issues() {
   done
 }
 
-# One process, nine creates. There is no official bulk route.
 create_milestone "M0 Foundation" "2026-10-12T23:59:59Z" \
-  "Lock N001–N004, Python 3.11 package skeleton, agent contract."
+  "Lock N001-N004, Python 3.11 package skeleton, agent contract."
 create_milestone "M1 Graph" "2026-11-02T23:59:59Z" \
   "All 17 node types plus generic directed links."
 create_milestone "M2 Store" "2026-11-16T23:59:59Z" \
@@ -94,4 +107,5 @@ assign_issues "M6 Web" 20
 assign_issues "M7 Adapters" 21 22 23
 assign_issues "M8 Package" 24
 
-echo "done. list with: gh api repos/${REPO}/milestones --jq '.[].title'"
+echo "done"
+echo "list: gh api repos/${REPO}/milestones --jq .[].title"
