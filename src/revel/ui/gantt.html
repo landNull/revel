@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Revel gantt</title>
+  <!--REVEL_HEAD-->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css">
+  <script src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js"></script>
+</head>
+<body>
+  <!--REVEL_NAV-->
+  <main class="container-fluid py-3">
+    <h1 class="h4">Gantt</h1>
+    <p class="muted">Dated nodes. Bar move writes <code>start</code>/<code>end</code> on the node.</p>
+    <div class="widget-host gantt" id="gantt-host">
+      <svg id="gantt"></svg>
+    </div>
+  </main>
+  <script>
+    fetch('/gantt').then(r => r.json()).then(tasks => {
+      const host = document.getElementById('gantt-host');
+      if (!tasks.length) {
+        host.textContent = 'No dated nodes. Set start=YYYY-MM-DD.';
+        return;
+      }
+      const g = new Gantt('#gantt', tasks, {
+        on_date_change: (task, start, end) => {
+          const s = start.toISOString().slice(0, 10);
+          const e = end.toISOString().slice(0, 10);
+          fetch('/nodes/' + task.id, {
+            method: 'PATCH',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({payload: {start: s, end: e}})
+          });
+        }
+      });
+    });
+  </script>
+</body>
+</html>

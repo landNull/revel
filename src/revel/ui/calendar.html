@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Revel calendar</title>
+  <!--REVEL_HEAD-->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/bootstrap5@6.1.15/index.global.min.js"></script>
+</head>
+<body>
+  <!--REVEL_NAV-->
+  <main class="container-fluid py-3">
+    <h1 class="h4">Calendar</h1>
+    <p class="muted">Dated nodes only (<code>start</code> or <code>due</code>). Drag updates the same payload Kanban uses.</p>
+    <div class="widget-host calendar" id="cal"></div>
+  </main>
+  <script>
+    const cal = new FullCalendar.Calendar(document.getElementById('cal'), {
+      themeSystem: 'bootstrap5',
+      initialView: 'dayGridMonth',
+      editable: true,
+      height: 'auto',
+      events: '/calendar',
+      eventDrop: async info => {
+        const start = info.event.startStr.slice(0, 10);
+        const end = info.event.end ? info.event.endStr.slice(0, 10) : start;
+        await fetch('/nodes/' + info.event.id, {
+          method: 'PATCH',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({payload: {start, end}})
+        });
+      }
+    });
+    cal.render();
+  </script>
+</body>
+</html>
