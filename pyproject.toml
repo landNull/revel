@@ -26,6 +26,9 @@ dependencies = []
 
 [project.optional-dependencies]
 store = ["kuzu>=0.11"]
+web = ["fastapi>=0.115", "uvicorn>=0.30"]
+dev = ["build>=1.2"]
+all = ["kuzu>=0.11", "fastapi>=0.115", "uvicorn>=0.30"]
 
 [project.scripts]
 revelctl = "revel.cli:main"
@@ -35,3 +38,6 @@ Repository = "https://github.com/landNull/revel"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+revel = ["ui/*.html", "ui/static/*"]
