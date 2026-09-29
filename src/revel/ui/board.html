@@ -15,7 +15,25 @@
     <form id="add" class="row g-2 align-items-end mb-3">
       <div class="col-auto">
         <label class="form-label mb-0" for="type">type</label>
-        <input class="form-control form-control-sm" id="type" name="type" value="task" size="8">
+        <select class="form-select form-select-sm" id="type" name="type" required>
+          <option value="task" selected>task</option>
+          <option value="project">project</option>
+          <option value="milestone">milestone</option>
+          <option value="file">file</option>
+          <option value="email">email</option>
+          <option value="event">event</option>
+          <option value="lead">lead</option>
+          <option value="opportunity">opportunity</option>
+          <option value="account">account</option>
+          <option value="contact">contact</option>
+          <option value="ticket">ticket</option>
+          <option value="campaign">campaign</option>
+          <option value="content">content</option>
+          <option value="inventory_item">inventory_item</option>
+          <option value="knowledge_article">knowledge_article</option>
+          <option value="user">user</option>
+          <option value="group">group</option>
+        </select>
       </div>
       <div class="col-auto">
         <label class="form-label mb-0" for="title">title</label>
