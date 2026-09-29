@@ -58,6 +58,10 @@
         <div class="modal-body">
           <input type="hidden" id="edit-id">
           <div class="mb-2">
+            <label class="form-label" for="edit-type">type</label>
+            <input class="form-control form-control-sm" id="edit-type" readonly>
+          </div>
+          <div class="mb-2">
             <label class="form-label" for="edit-title">title</label>
             <input class="form-control form-control-sm" id="edit-title" required>
           </div>
@@ -69,44 +73,23 @@
               <option value="done">done</option>
             </select>
           </div>
-          <div class="mb-2">
-            <label class="form-label" for="edit-due">due</label>
-            <input class="form-control form-control-sm" id="edit-due" type="date">
-          </div>
-          <p class="mb-2">
-            <a href="#edit-more" class="edit-toggle" id="edit-toggle" role="button" aria-expanded="false" aria-controls="edit-more">Show All</a>
-          </p>
-          <div class="collapse" id="edit-more">
-            <div class="mb-2">
-              <label class="form-label" for="edit-type">type</label>
-              <input class="form-control form-control-sm" id="edit-type" readonly>
+          <div class="row g-2">
+            <div class="col">
+              <label class="form-label" for="edit-start">start</label>
+              <input class="form-control form-control-sm" id="edit-start" type="date">
             </div>
-            <div class="mb-2">
-              <label class="form-label" for="edit-id-show">id</label>
-              <input class="form-control form-control-sm" id="edit-id-show" readonly>
+            <div class="col">
+              <label class="form-label" for="edit-end">end</label>
+              <input class="form-control form-control-sm" id="edit-end" type="date">
             </div>
-            <div class="mb-2">
-              <label class="form-label" for="edit-created">created_at</label>
-              <input class="form-control form-control-sm" id="edit-created" readonly>
-            </div>
-            <div class="row g-2 mb-2">
-              <div class="col">
-                <label class="form-label" for="edit-start">start</label>
-                <input class="form-control form-control-sm" id="edit-start" type="date">
-              </div>
-              <div class="col">
-                <label class="form-label" for="edit-end">end</label>
-                <input class="form-control form-control-sm" id="edit-end" type="date">
-              </div>
-            </div>
-            <div class="mb-0">
-              <label class="form-label" for="edit-extra">other payload</label>
-              <textarea class="form-control form-control-sm font-monospace" id="edit-extra" rows="5" spellcheck="false"></textarea>
-              <div class="form-text">JSON object. column / start / end / due stay on the fields above.</div>
+            <div class="col">
+              <label class="form-label" for="edit-due">due</label>
+              <input class="form-control form-control-sm" id="edit-due" type="date">
             </div>
           </div>
         </div>
-        <div class="modal-footer justify-content-end">
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
           <button type="submit" class="btn btn-primary">Save</button>
         </div>
       </form>
@@ -169,39 +152,15 @@
       return el;
     }
 
-    const SIMPLE_KEYS = ['column', 'start', 'end', 'due'];
-
-    function extraPayload(payload) {
-      const extra = {};
-      Object.keys(payload || {}).forEach(key => {
-        if (!SIMPLE_KEYS.includes(key)) extra[key] = payload[key];
-      });
-      return extra;
-    }
-
-    function setEditExpanded(open) {
-      const pane = document.getElementById('edit-more');
-      const link = document.getElementById('edit-toggle');
-      const inst = bootstrap.Collapse.getOrCreateInstance(pane, {toggle: false});
-      if (open) inst.show();
-      else inst.hide();
-      link.textContent = open ? 'Show Less' : 'Show All';
-      link.setAttribute('aria-expanded', open ? 'true' : 'false');
-    }
-
     async function openEdit(id) {
       const node = await (await fetch('/nodes/' + id)).json();
       document.getElementById('edit-id').value = node.id;
-      document.getElementById('edit-id-show').value = node.id;
       document.getElementById('edit-type').value = node.type;
-      document.getElementById('edit-created').value = node.created_at || '';
       document.getElementById('edit-title').value = node.title;
       document.getElementById('edit-column').value = node.payload.column || 'todo';
       document.getElementById('edit-start').value = node.payload.start || '';
       document.getElementById('edit-end').value = node.payload.end || '';
       document.getElementById('edit-due').value = node.payload.due || '';
-      document.getElementById('edit-extra').value = JSON.stringify(extraPayload(node.payload), null, 2);
-      setEditExpanded(false);
       bootstrap.Modal.getOrCreateInstance(document.getElementById('editModal')).show();
     }
 
@@ -247,45 +206,12 @@
       render();
     });
 
-    document.getElementById('edit-toggle').addEventListener('click', ev => {
-      ev.preventDefault();
-      const open = document.getElementById('edit-toggle').getAttribute('aria-expanded') === 'true';
-      setEditExpanded(!open);
-    });
-    document.getElementById('edit-more').addEventListener('shown.bs.collapse', () => {
-      const link = document.getElementById('edit-toggle');
-      link.textContent = 'Show Less';
-      link.setAttribute('aria-expanded', 'true');
-    });
-    document.getElementById('edit-more').addEventListener('hidden.bs.collapse', () => {
-      const link = document.getElementById('edit-toggle');
-      link.textContent = 'Show All';
-      link.setAttribute('aria-expanded', 'false');
-    });
-
     document.getElementById('editForm').addEventListener('submit', async ev => {
       ev.preventDefault();
       const id = document.getElementById('edit-id').value;
-      let extra = {};
-      const raw = document.getElementById('edit-extra').value.trim();
-      if (raw) {
-        try {
-          extra = JSON.parse(raw);
-        } catch (err) {
-          document.getElementById('edit-extra').focus();
-          setEditExpanded(true);
-          return;
-        }
-        if (extra === null || Array.isArray(extra) || typeof extra !== 'object') {
-          setEditExpanded(true);
-          return;
-        }
-      }
-      SIMPLE_KEYS.forEach(key => { delete extra[key]; });
       await mutate(id, {
         title: document.getElementById('edit-title').value,
         payload: {
-          ...extra,
           column: document.getElementById('edit-column').value,
           start: document.getElementById('edit-start').value,
           end: document.getElementById('edit-end').value,
