@@ -101,8 +101,6 @@ class KuzuGraphStore:
                 params,
             )
             return link
-        # SET properties after CREATE so Kuzu does not parse a map-literal
-        # with an extra closing brace (seen on pipx wheels).
         self._conn.execute(
             f"MATCH (a:{_NODE_TABLE} {{id: $src}}), (b:{_NODE_TABLE} {{id: $dst}}) "
             f"CREATE (a)-[r:{_REL_TABLE}]->(b) "
@@ -153,6 +151,19 @@ class KuzuGraphStore:
             "RETURN r.link_id, a.id, b.id, r.kind, r.payload, r.created_at"
         )
         return [_link_from_row(row) for row in _all_rows(result)]
+
+    def delete_link(self, link_id: str) -> None:
+        self._conn.execute(
+            f"MATCH (a:{_NODE_TABLE})-[r:{_REL_TABLE}]->(b:{_NODE_TABLE}) "
+            "WHERE r.link_id = $link_id DELETE r",
+            {"link_id": link_id},
+        )
+
+    def delete_node(self, node_id: str) -> None:
+        self._conn.execute(
+            f"MATCH (n:{_NODE_TABLE} {{id: $id}}) DETACH DELETE n",
+            {"id": node_id},
+        )
 
     def close(self) -> None:
         self._conn = None
