@@ -126,18 +126,55 @@ html, body {
   min-height: 8rem;
 }
 .widget-host.board .card-node {
+  position: relative;
   background: var(--revel-bg);
   border: 1px solid var(--revel-border);
   border-left: 3px solid var(--revel-accent);
   border-radius: var(--revel-radius);
   margin: 0.4rem 0;
-  padding: 0.5rem 0.65rem;
+  padding: 0.5rem 0.65rem 0.5rem 1.7rem;
   cursor: grab;
   color: var(--revel-text);
 }
 .widget-host.board .card-node small {
   display: block;
   color: var(--revel-muted);
+}
+.widget-host.board .card-menu {
+  position: absolute;
+  top: 0.2rem;
+  left: 0.15rem;
+}
+.widget-host.board .btn-gear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--revel-radius);
+  background: transparent;
+  color: var(--revel-muted);
+  cursor: pointer;
+}
+.widget-host.board .btn-gear:hover,
+.widget-host.board .btn-gear[aria-expanded="true"] {
+  color: var(--revel-text);
+  background: color-mix(in srgb, var(--revel-border) 55%, transparent);
+}
+.widget-host.board .card-body-text {
+  min-width: 0;
+}
+#delete-confirm {
+  color: red;
+  background: transparent;
+  border: 1px solid red;
+}
+#delete-confirm:hover {
+  color: #fff;
+  background: red;
+  border-color: red;
 }
 
 .widget-host.calendar {
