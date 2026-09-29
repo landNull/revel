@@ -25,14 +25,13 @@
         return;
       }
       const g = new Gantt('#gantt', tasks, {
+        on_click: task => {
+          RevelNode.openEdit(task.id, () => location.reload());
+        },
         on_date_change: (task, start, end) => {
           const s = start.toISOString().slice(0, 10);
           const e = end.toISOString().slice(0, 10);
-          fetch('/nodes/' + task.id, {
-            method: 'PATCH',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({payload: {start: s, end: e}})
-          });
+          RevelNode.mutate(task.id, {payload: {start: s, end: e}});
         }
       });
     });

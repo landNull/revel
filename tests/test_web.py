@@ -35,6 +35,8 @@ class WebAdapterTests(unittest.TestCase):
         self.assertEqual(cal.status_code, 200)
         self.assertIn("themeSystem", cal.text)
         self.assertIn("bootstrap5", cal.text)
+        self.assertIn("eventClick", cal.text)
+        self.assertIn("/static/ui/revel-node.js", cal.text)
 
     def test_edit_and_delete_node(self) -> None:
         created = self.client.post(
@@ -49,7 +51,14 @@ class WebAdapterTests(unittest.TestCase):
         page = self.client.get("/ui/board")
         self.assertIn("js-edit", page.text)
         self.assertIn("js-delete", page.text)
-        self.assertIn("Are you sure you want to delete", page.text)
+        self.assertIn("RevelNode.openEdit", page.text)
+        self.assertIn("RevelNode.openDelete", page.text)
+        js = self.client.get("/static/ui/revel-node.js")
+        self.assertEqual(js.status_code, 200)
+        self.assertIn("Are you sure you want to delete this", js.text)
+        self.assertIn("edit-delete", js.text)
+        css = self.client.get("/static/ui/revel.css")
+        self.assertIn("backdrop-filter", css.text)
         gone = self.client.delete(f"/nodes/{node_id}")
         self.assertEqual(gone.status_code, 200)
         self.assertEqual(self.client.get(f"/nodes/{node_id}").status_code, 404)

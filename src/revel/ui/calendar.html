@@ -13,7 +13,7 @@
   <!--REVEL_NAV-->
   <main class="container-fluid py-3">
     <h1 class="h4">Calendar</h1>
-    <p class="muted">Dated nodes only (<code>start</code> or <code>due</code>). Drag updates the same payload Kanban uses.</p>
+    <p class="muted">Dated nodes only (<code>start</code> or <code>due</code>). Click an event to edit every field. Drag updates the same payload Kanban uses.</p>
     <div class="widget-host calendar" id="cal"></div>
   </main>
   <script>
@@ -23,14 +23,14 @@
       editable: true,
       height: 'auto',
       events: '/calendar',
+      eventClick: info => {
+        info.jsEvent.preventDefault();
+        RevelNode.openEdit(info.event.id, () => cal.refetchEvents());
+      },
       eventDrop: async info => {
         const start = info.event.startStr.slice(0, 10);
         const end = info.event.end ? info.event.endStr.slice(0, 10) : start;
-        await fetch('/nodes/' + info.event.id, {
-          method: 'PATCH',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({payload: {start, end}})
-        });
+        await RevelNode.mutate(info.event.id, {payload: {start, end}});
       }
     });
     cal.render();

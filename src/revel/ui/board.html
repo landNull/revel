@@ -48,90 +48,13 @@
     </div>
   </main>
 
-  <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <form class="modal-content" id="editForm">
-        <div class="modal-header">
-          <h2 class="modal-title h5" id="editModalLabel">Edit node</h2>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <input type="hidden" id="edit-id">
-          <div class="mb-2">
-            <label class="form-label" for="edit-type">type</label>
-            <input class="form-control form-control-sm" id="edit-type" readonly>
-          </div>
-          <div class="mb-2">
-            <label class="form-label" for="edit-title">title</label>
-            <input class="form-control form-control-sm" id="edit-title" required>
-          </div>
-          <div class="mb-2">
-            <label class="form-label" for="edit-column">column</label>
-            <select class="form-select form-select-sm" id="edit-column">
-              <option value="todo">todo</option>
-              <option value="doing">doing</option>
-              <option value="done">done</option>
-            </select>
-          </div>
-          <div class="row g-2">
-            <div class="col">
-              <label class="form-label" for="edit-start">start</label>
-              <input class="form-control form-control-sm" id="edit-start" type="date">
-            </div>
-            <div class="col">
-              <label class="form-label" for="edit-end">end</label>
-              <input class="form-control form-control-sm" id="edit-end" type="date">
-            </div>
-            <div class="col">
-              <label class="form-label" for="edit-due">due</label>
-              <input class="form-control form-control-sm" id="edit-due" type="date">
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary">Save</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2 class="modal-title h5" id="deleteModalLabel">Delete node</h2>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <p class="mb-0">Are you sure you want to delete <strong id="delete-title"></strong>?</p>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="button" class="btn" id="delete-confirm" style="color: red;">Delete</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <script>
-    let pendingDeleteId = null;
-
-    async function mutate(id, body) {
-      const res = await fetch('/nodes/' + id, {
-        method: 'PATCH',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(body)
-      });
-      if (!res.ok) throw new Error('mutate failed');
-      return res.json();
-    }
-
     function cardEl(item) {
       const el = document.createElement('div');
       el.className = 'card-node';
       el.dataset.id = item.id;
       el.dataset.title = item.title;
+      el.dataset.type = item.type;
       const menuId = 'menu-' + item.id.replace(/[^a-zA-Z0-9_-]/g, '');
       el.innerHTML =
         '<div class="dropdown card-menu">' +
@@ -147,27 +70,11 @@
           item.title +
           '<small>' + item.type + ' · ' + item.id.slice(0, 8) + '</small>' +
         '</div>';
-      el.querySelector('.js-edit').addEventListener('click', () => openEdit(item.id));
-      el.querySelector('.js-delete').addEventListener('click', () => openDelete(item.id, item.title));
+      el.querySelector('.js-edit').addEventListener('click', () => RevelNode.openEdit(item.id, render));
+      el.querySelector('.js-delete').addEventListener('click', () => {
+        RevelNode.openDelete({id: item.id, type: item.type, title: item.title}, render);
+      });
       return el;
-    }
-
-    async function openEdit(id) {
-      const node = await (await fetch('/nodes/' + id)).json();
-      document.getElementById('edit-id').value = node.id;
-      document.getElementById('edit-type').value = node.type;
-      document.getElementById('edit-title').value = node.title;
-      document.getElementById('edit-column').value = node.payload.column || 'todo';
-      document.getElementById('edit-start').value = node.payload.start || '';
-      document.getElementById('edit-end').value = node.payload.end || '';
-      document.getElementById('edit-due').value = node.payload.due || '';
-      bootstrap.Modal.getOrCreateInstance(document.getElementById('editModal')).show();
-    }
-
-    function openDelete(id, title) {
-      pendingDeleteId = id;
-      document.getElementById('delete-title').textContent = title;
-      bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteModal')).show();
     }
 
     async function render() {
@@ -189,7 +96,7 @@
           animation: 150,
           filter: '.card-menu, .btn-gear, .dropdown-menu',
           preventOnFilter: false,
-          onAdd: ev => mutate(ev.item.dataset.id, {payload: {column: wrap.dataset.column}})
+          onAdd: ev => RevelNode.mutate(ev.item.dataset.id, {payload: {column: wrap.dataset.column}})
         });
       });
     }
@@ -203,31 +110,6 @@
         body: JSON.stringify({type: fd.get('type'), title: fd.get('title')})
       });
       ev.target.title.value = '';
-      render();
-    });
-
-    document.getElementById('editForm').addEventListener('submit', async ev => {
-      ev.preventDefault();
-      const id = document.getElementById('edit-id').value;
-      await mutate(id, {
-        title: document.getElementById('edit-title').value,
-        payload: {
-          column: document.getElementById('edit-column').value,
-          start: document.getElementById('edit-start').value,
-          end: document.getElementById('edit-end').value,
-          due: document.getElementById('edit-due').value
-        }
-      });
-      bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
-      render();
-    });
-
-    document.getElementById('delete-confirm').addEventListener('click', async () => {
-      if (!pendingDeleteId) return;
-      const res = await fetch('/nodes/' + pendingDeleteId, {method: 'DELETE'});
-      if (!res.ok) return;
-      pendingDeleteId = null;
-      bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
       render();
     });
 
