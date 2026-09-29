@@ -1,0 +1,1 @@
+"""Loadable demo graph. Same Node/Link types as production.\n\nIds are stable (demo-*) so a second load upserts instead of cloning.\n"""\n
