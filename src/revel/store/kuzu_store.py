@@ -84,32 +84,31 @@ class KuzuGraphStore:
         if self.get_node(link.source_id) is None or self.get_node(link.target_id) is None:
             raise KeyError("both ends of a link must exist as nodes")
         payload = json.dumps(link.payload)
+        params = {
+            "src": link.source_id,
+            "dst": link.target_id,
+            "link_id": link.id,
+            "kind": link.kind,
+            "payload": payload,
+            "created_at": _iso(link.created_at),
+        }
         existing = self.get_link(link.id)
         if existing is not None:
             self._conn.execute(
                 f"MATCH (a:{_NODE_TABLE})-[r:{_REL_TABLE}]->(b:{_NODE_TABLE}) "
                 "WHERE r.link_id = $link_id "
                 "SET r.kind = $kind, r.payload = $payload, r.created_at = $created_at",
-                {
-                    "link_id": link.id,
-                    "kind": link.kind,
-                    "payload": payload,
-                    "created_at": _iso(link.created_at),
-                },
+                params,
             )
             return link
+        # SET properties after CREATE so Kuzu does not parse a map-literal
+        # with an extra closing brace (seen on pipx wheels).
         self._conn.execute(
             f"MATCH (a:{_NODE_TABLE} {{id: $src}}), (b:{_NODE_TABLE} {{id: $dst}}) "
-            f"CREATE (a)-[:{_REL_TABLE} {{link_id: $link_id, kind: $kind, "
-            "payload: $payload, created_at: $created_at}}]->(b)",
-            {
-                "src": link.source_id,
-                "dst": link.target_id,
-                "link_id": link.id,
-                "kind": link.kind,
-                "payload": payload,
-                "created_at": _iso(link.created_at),
-            },
+            f"CREATE (a)-[r:{_REL_TABLE}]->(b) "
+            "SET r.link_id = $link_id, r.kind = $kind, "
+            "r.payload = $payload, r.created_at = $created_at",
+            params,
         )
         return link
 
@@ -138,6 +137,20 @@ class KuzuGraphStore:
             f"MATCH (a:{_NODE_TABLE})-[r:{_REL_TABLE}]->(b:{_NODE_TABLE} {{id: $id}}) "
             "RETURN r.link_id, a.id, b.id, r.kind, r.payload, r.created_at",
             {"id": node_id},
+        )
+        return [_link_from_row(row) for row in _all_rows(result)]
+
+    def all_nodes(self) -> list[Node]:
+        result = self._conn.execute(
+            f"MATCH (n:{_NODE_TABLE}) "
+            "RETURN n.id, n.type, n.title, n.payload, n.created_at"
+        )
+        return [_node_from_row(row) for row in _all_rows(result)]
+
+    def all_links(self) -> list[Link]:
+        result = self._conn.execute(
+            f"MATCH (a:{_NODE_TABLE})-[r:{_REL_TABLE}]->(b:{_NODE_TABLE}) "
+            "RETURN r.link_id, a.id, b.id, r.kind, r.payload, r.created_at"
         )
         return [_link_from_row(row) for row in _all_rows(result)]
 

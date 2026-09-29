@@ -32,5 +32,11 @@ class MemoryGraphStore:
     def links_to(self, node_id: str) -> list[Link]:
         return [link for link in self._links.values() if link.target_id == node_id]
 
+    def all_nodes(self) -> list[Node]:
+        return list(self._nodes.values())
+
+    def all_links(self) -> list[Link]:
+        return list(self._links.values())
+
     def close(self) -> None:
         return None
