@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Revel dashboard</title>
+  <!--REVEL_HEAD-->
+</head>
+<body>
+  <!--REVEL_NAV-->
+  <main class="container-fluid py-3">
+    <h1 class="h4 mb-1">Dashboard</h1>
+    <p class="muted">Same graph as <code>revelctl</code>. Views only.</p>
+    <p>
+      <button type="button" class="btn btn-primary btn-sm" id="load">Load demo dataset</button>
+      <span id="status" class="muted ms-2"></span>
+    </p>
+    <div class="row g-3 revel-kpi" id="kpi"></div>
+    <div class="row g-3 mt-1">
+      <div class="col-md-4">
+        <article class="card h-100">
+          <div class="card-body">
+            <h2 class="h6 text-uppercase muted">Columns</h2>
+            <div id="cols"></div>
+          </div>
+        </article>
+      </div>
+      <div class="col-md-3">
+        <article class="card h-100">
+          <div class="card-body">
+            <h2 class="h6 text-uppercase muted">Types</h2>
+            <div id="types"></div>
+          </div>
+        </article>
+      </div>
+      <div class="col-md-5">
+        <article class="card h-100">
+          <div class="card-body">
+            <h2 class="h6 text-uppercase muted">Recent nodes</h2>
+            <table class="table table-sm" id="recent"><tbody></tbody></table>
+          </div>
+        </article>
+      </div>
+    </div>
+  </main>
+  <script>
+    async function draw() {
+      const s = await (await fetch('/stats')).json();
+      document.getElementById('kpi').innerHTML = [
+        ['Nodes', s.nodes],
+        ['Links', s.links],
+        ['Dated', s.dated],
+        ['Demo', s.demo_loaded ? 'yes' : 'no']
+      ].map(([k,v]) =>
+        '<div class="col-6 col-md-3"><article class="card"><div class="card-body"><h2 class="h6 text-uppercase muted">'+k+'</h2><div class="num">'+v+'</div></div></article></div>'
+      ).join('');
+      const cols = s.by_column || {};
+      const max = Math.max(1, ...Object.values(cols));
+      document.getElementById('cols').innerHTML = Object.entries(cols).map(([k,v]) =>
+        k + ' <strong>' + v + '</strong><div class="revel-bar"><span style="width:'+(100*v/max)+'%"></span></div>'
+      ).join('');
+      document.getElementById('types').innerHTML = Object.entries(s.by_type || {}).map(([k,v]) =>
+        '<div>'+k+' <strong>'+v+'</strong></div>'
+      ).join('') || '<span class="muted">empty graph</span>';
+      const body = document.querySelector('#recent tbody');
+      body.innerHTML = (s.recent || []).map(n =>
+        '<tr><td>'+n.type+'</td><td>'+n.title+'</td><td class="muted">'+(n.column||'')+'</td></tr>'
+      ).join('');
+    }
+    document.getElementById('load').onclick = async () => {
+      const res = await fetch('/demo', {method: 'POST'});
+      const data = await res.json();
+      document.getElementById('status').textContent =
+        'upserted ' + data.nodes + ' nodes, ' + data.links + ' links';
+      draw();
+    };
+    draw();
+  </script>
+</body>
+</html>

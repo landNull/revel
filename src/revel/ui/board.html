@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Revel board</title>
+  <!--REVEL_HEAD-->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
+</head>
+<body>
+  <!--REVEL_NAV-->
+  <main class="container-fluid py-3">
+    <h1 class="h4">Board</h1>
+    <p class="muted">Kanban projection. Drag writes <code>payload.column</code>.</p>
+    <form id="add" class="row g-2 align-items-end mb-3">
+      <div class="col-auto">
+        <label class="form-label mb-0" for="type">type</label>
+        <input class="form-control form-control-sm" id="type" name="type" value="task" size="8">
+      </div>
+      <div class="col-auto">
+        <label class="form-label mb-0" for="title">title</label>
+        <input class="form-control form-control-sm" id="title" name="title" placeholder="title" required>
+      </div>
+      <div class="col-auto">
+        <button class="btn btn-primary btn-sm" type="submit">create</button>
+      </div>
+    </form>
+    <div class="widget-host board">
+      <div class="cols" id="board"></div>
+    </div>
+  </main>
+  <script>
+    async function mutate(id, payload) {
+      await fetch('/nodes/' + id, {
+        method: 'PATCH',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({payload})
+      });
+    }
+    function cardEl(item) {
+      const el = document.createElement('div');
+      el.className = 'card-node';
+      el.dataset.id = item.id;
+      el.innerHTML = item.title + '<small>' + item.type + ' · ' + item.id.slice(0, 8) + '</small>';
+      return el;
+    }
+    async function render() {
+      const cols = await (await fetch('/board')).json();
+      const root = document.getElementById('board');
+      root.innerHTML = '';
+      cols.forEach(col => {
+        const wrap = document.createElement('div');
+        wrap.className = 'col';
+        wrap.dataset.column = col.id;
+        wrap.innerHTML = '<h2>' + col.title + '</h2>';
+        const list = document.createElement('div');
+        list.className = 'list';
+        (col.item || []).forEach(item => list.appendChild(cardEl(item)));
+        wrap.appendChild(list);
+        root.appendChild(wrap);
+        new Sortable(list, {
+          group: 'revel',
+          animation: 150,
+          onAdd: ev => mutate(ev.item.dataset.id, {column: wrap.dataset.column})
+        });
+      });
+    }
+    document.getElementById('add').addEventListener('submit', async ev => {
+      ev.preventDefault();
+      const fd = new FormData(ev.target);
+      await fetch('/nodes', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({type: fd.get('type'), title: fd.get('title')})
+      });
+      ev.target.title.value = '';
+      render();
+    });
+    render();
+  </script>
+</body>
+</html>
