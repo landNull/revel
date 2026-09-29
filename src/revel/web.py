@@ -75,6 +75,7 @@ _HEAD = """
   <link rel="stylesheet" href="/static/ui/revel.css">
   <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script defer src="/static/ui/revel-theme.js"></script>
+  <script defer src="/static/ui/revel-node.js"></script>
 """
 
 _NAV = """
