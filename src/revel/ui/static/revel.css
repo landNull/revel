@@ -166,11 +166,28 @@ html, body {
 .widget-host.board .card-body-text {
   min-width: 0;
 }
+.widget-host.calendar .fc-event {
+  cursor: pointer;
+}
+
+.modal-backdrop.show {
+  background-color: rgba(12, 16, 20, 0.42);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+body.modal-open > :not(.modal):not(.modal-backdrop) {
+  filter: blur(1.5px);
+}
+#editModal .modal-footer {
+  justify-content: space-between;
+}
+#edit-delete,
 #delete-confirm {
   color: red;
   background: transparent;
   border: 1px solid red;
 }
+#edit-delete:hover,
 #delete-confirm:hover {
   color: #fff;
   background: red;
