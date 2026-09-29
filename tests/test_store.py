@@ -27,6 +27,18 @@ class MemoryStoreTests(unittest.TestCase):
         node = store.put_node(Node.create("file", "brief.md"))
         self.assertIsNotNone(store.get_node(node.id))
 
+    def test_delete_node_drops_links(self) -> None:
+        from revel.plane import delete_node
+
+        store = MemoryGraphStore()
+        email = store.put_node(Node.create("email", "Re: contract"))
+        task = store.put_node(Node.create("task", "Write brief"))
+        store.put_link(Link.create(email, task, "assigned"))
+        delete_node(store, task.id)
+        self.assertIsNone(store.get_node(task.id))
+        self.assertEqual(store.links_from(email.id), [])
+        self.assertEqual(store.all_links(), [])
+
 
 if __name__ == "__main__":
     unittest.main()
