@@ -36,6 +36,24 @@ class WebAdapterTests(unittest.TestCase):
         self.assertIn("themeSystem", cal.text)
         self.assertIn("bootstrap5", cal.text)
 
+    def test_edit_and_delete_node(self) -> None:
+        created = self.client.post(
+            "/nodes", json={"type": "ticket", "title": "SSO flake"}
+        )
+        node_id = created.json()["id"]
+        patched = self.client.patch(
+            f"/nodes/{node_id}", json={"title": "SSO login flake", "payload": {"column": "doing"}}
+        )
+        self.assertEqual(patched.status_code, 200)
+        self.assertEqual(patched.json()["title"], "SSO login flake")
+        page = self.client.get("/ui/board")
+        self.assertIn("js-edit", page.text)
+        self.assertIn("js-delete", page.text)
+        self.assertIn("Are you sure you want to delete", page.text)
+        gone = self.client.delete(f"/nodes/{node_id}")
+        self.assertEqual(gone.status_code, 200)
+        self.assertEqual(self.client.get(f"/nodes/{node_id}").status_code, 404)
+
 
 if __name__ == "__main__":
     unittest.main()
