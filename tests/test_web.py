@@ -49,6 +49,8 @@ class WebAdapterTests(unittest.TestCase):
         page = self.client.get("/ui/board")
         self.assertIn("js-edit", page.text)
         self.assertIn("js-delete", page.text)
+        self.assertIn("Show All", page.text)
+        self.assertIn("edit-more", page.text)
         self.assertIn("Are you sure you want to delete", page.text)
         gone = self.client.delete(f"/nodes/{node_id}")
         self.assertEqual(gone.status_code, 200)
