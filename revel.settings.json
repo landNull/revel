@@ -67,7 +67,14 @@
   },
   "surfaces": {
     "cli": {"status": "active", "name": "revelctl"},
-    "web": {"status": "active", "framework": "fastapi", "extra": "revel[web]"},
+    "web": {
+      "status": "active",
+      "framework": "fastapi",
+      "extra": "revel[web]",
+      "chrome": "bootstrap5",
+      "tokens": "src/revel/ui/static/revel.css",
+      "calendar_theme": "fullcalendar bootstrap5"
+    },
     "tui": {"status": "parked", "toolkit": "textual"},
     "desktop_efl": {"status": "rejected"},
     "ml_orange": {"status": "parked"}
@@ -106,7 +113,8 @@
     {"id": "D008", "status": "accepted", "title": "AGPL-3.0 community; hosted extras proprietary"},
     {"id": "D009", "status": "parked", "title": "Orange and conda are not Revel"},
     {"id": "D010", "status": "parked", "title": "Textual TUI parked"},
-    {"id": "D011", "status": "accepted", "title": "Artix and OpenRC are not project identity"}
+    {"id": "D011", "status": "accepted", "title": "Artix and OpenRC are not project identity"},
+    {"id": "D012", "status": "accepted", "title": "Web chrome is Bootstrap 5 plus revel.css tokens; widgets inherit tokens"}
   ],
   "out_of_scope": [
     "Enlite / EFL / Edje",
