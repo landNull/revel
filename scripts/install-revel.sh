@@ -79,3 +79,143 @@ run() {
   fi
   "$@"
 }
+
+# --- host probe -------------------------------------------------------------
+
+detect_os() {
+  OS_ID="unknown"
+  OS_LIKE=""
+  OS_PRETTY="unknown"
+  if [[ -r /etc/os-release ]]; then
+    # shellcheck disable=SC1091
+    . /etc/os-release
+    OS_ID="${ID:-unknown}"
+    OS_LIKE="${ID_LIKE:-}"
+    OS_PRETTY="${PRETTY_NAME:-$OS_ID}"
+  fi
+}
+
+detect_init() {
+  INIT="unknown"
+  if [[ -d /run/systemd/system ]] && have systemctl; then
+    INIT="systemd"
+  elif [[ -x /sbin/init ]] && /sbin/init --version 2>/dev/null | grep -qi sysv; then
+    INIT="sysvinit"
+  elif [[ -d /etc/init.d ]] && [[ -x /sbin/init ]]; then
+    INIT="sysvinit"
+  elif [[ -x /sbin/runit-init ]] || [[ -d /etc/runit ]]; then
+    INIT="runit"
+  fi
+}
+
+detect_pkg_mgr() {
+  PKG_MGR=""
+  PKG_INSTALL=()
+  if have apt-get; then
+    PKG_MGR="apt-get"
+    PKG_INSTALL=(apt-get install -y)
+  elif have pacman; then
+    PKG_MGR="pacman"
+    PKG_INSTALL=(pacman -S --needed --noconfirm)
+  elif have dnf; then
+    PKG_MGR="dnf"
+    PKG_INSTALL=(dnf install -y)
+  elif have apk; then
+    PKG_MGR="apk"
+    PKG_INSTALL=(apk add)
+  elif have zypper; then
+    PKG_MGR="zypper"
+    PKG_INSTALL=(zypper install -y)
+  fi
+}
+
+packages_for() {
+  local need=("$@")
+  local out=()
+  local p
+  for p in "${need[@]}"; do
+    case "$PKG_MGR:$p" in
+      apt-get:python) out+=(python3 python3-venv python3-pip python3-dev) ;;
+      apt-get:sqlite) out+=(sqlite3 libsqlite3-dev) ;;
+      apt-get:git) out+=(git) ;;
+      apt-get:build) out+=(build-essential) ;;
+      pacman:python) out+=(python python-pip) ;;
+      pacman:sqlite) out+=(sqlite) ;;
+      pacman:git) out+=(git) ;;
+      pacman:build) out+=(base-devel) ;;
+      dnf:python) out+=(python3 python3-pip python3-devel) ;;
+      dnf:sqlite) out+=(sqlite sqlite-devel) ;;
+      dnf:git) out+=(git) ;;
+      dnf:build) out+=(gcc gcc-c++ make) ;;
+      apk:python) out+=(python3 py3-pip py3-virtualenv) ;;
+      apk:sqlite) out+=(sqlite sqlite-dev) ;;
+      apk:git) out+=(git) ;;
+      apk:build) out+=(build-base) ;;
+      zypper:python) out+=(python3 python3-pip python3-devel) ;;
+      zypper:sqlite) out+=(sqlite3 sqlite3-devel) ;;
+      zypper:git) out+=(git) ;;
+      zypper:build) out+=(gcc make) ;;
+      *) ;;
+    esac
+  done
+  printf '%s\n' "${out[@]}"
+}
+
+python_ok() {
+  local bin="$1"
+  have "$bin" || return 1
+  "$bin" -c "import sys; raise SystemExit(0 if sys.version_info >= (${PYTHON_MIN_MAJOR}, ${PYTHON_MIN_MINOR}) else 1)" 2>/dev/null
+}
+
+pick_python() {
+  PYTHON=""
+  local c
+  for c in python3.13 python3.12 python3.11 python3 python; do
+    if python_ok "$c"; then
+      PYTHON="$(command -v "$c")"
+      return 0
+    fi
+  done
+  return 1
+}
+
+sqlite_ok() {
+  have sqlite3 || return 1
+  sqlite3 --version >/dev/null 2>&1
+}
+
+sudo_cmd() {
+  if [[ "$(id -u)" -eq 0 ]]; then
+    printf '%s\n' ""
+    return 0
+  fi
+  if ! have sudo; then
+    warn "sudo not found and not root"
+    return 1
+  fi
+  printf '%s\n' "sudo"
+}
+
+install_packages() {
+  local pkgs=("$@")
+  [[ ${#pkgs[@]} -eq 0 ]] && return 0
+  if [[ -z "$PKG_MGR" ]]; then
+    warn "no supported package manager; install manually: ${pkgs[*]}"
+    return 1
+  fi
+  local wrapper
+  wrapper="$(sudo_cmd)" || return 1
+  log "need packages: ${pkgs[*]}"
+  if ! confirm "install with ${wrapper:+$wrapper }${PKG_MGR}?"; then
+    warn "skipped package install"
+    return 1
+  fi
+  if [[ "$DRY_RUN" == "1" ]]; then
+    log "  dry-run: ${wrapper} ${PKG_INSTALL[*]} ${pkgs[*]}"
+    return 0
+  fi
+  if [[ "$PKG_MGR" == "apt-get" ]]; then
+    ${wrapper} apt-get update
+  fi
+  ${wrapper} "${PKG_INSTALL[@]}" "${pkgs[@]}"
+}
