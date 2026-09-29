@@ -13,6 +13,12 @@ def open_store(path: str | Path | None = None, *, engine: str = "kuzu") -> Graph
     kind = engine.strip().lower()
     if kind == "memory":
         return MemoryGraphStore()
+    if kind == "file":
+        from revel.store.file_store import FileGraphStore
+
+        raw = Path(path or default_store_path())
+        json_path = raw.with_suffix(".json") if raw.suffix == ".kuzu" else raw
+        return FileGraphStore(json_path)
     if kind in {"kuzu", "default"}:
         try:
             from revel.store.kuzu_store import KuzuGraphStore
