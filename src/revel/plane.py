@@ -1,6 +1,6 @@
 """In-process control plane (D006).
 
-Request: create / link / query / mutate / list.
+Request: create / link / query / mutate / list / delete.
 Response: Node, Link, or lists of those.
 TUI and FastAPI should call these functions, not the store directly.
 """
@@ -81,3 +81,18 @@ def mutate_node(
             new_payload.update(payload)
     updated = replace(node, title=new_title, payload=new_payload)
     return store.put_node(updated)
+
+
+def delete_node(store: GraphStore, node_id: str) -> str:
+    """Remove a node and every link that touched it."""
+    node = store.get_node(node_id)
+    if node is None:
+        raise KeyError(f"unknown node: {node_id}")
+    outgoing, incoming = neighbors(store, node_id)
+    seen: set[str] = set()
+    for link in (*outgoing, *incoming):
+        if link.id not in seen:
+            store.delete_link(link.id)
+            seen.add(link.id)
+    store.delete_node(node_id)
+    return node_id

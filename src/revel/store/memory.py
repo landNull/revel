@@ -38,5 +38,14 @@ class MemoryGraphStore:
     def all_links(self) -> list[Link]:
         return list(self._links.values())
 
+    def delete_link(self, link_id: str) -> None:
+        self._links.pop(link_id, None)
+
+    def delete_node(self, node_id: str) -> None:
+        self._nodes.pop(node_id, None)
+        drop = [lid for lid, link in self._links.items() if link.source_id == node_id or link.target_id == node_id]
+        for lid in drop:
+            self._links.pop(lid, None)
+
     def close(self) -> None:
         return None
